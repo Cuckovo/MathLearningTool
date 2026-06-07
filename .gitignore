@@ -14,3 +14,6 @@ Thumbs.db
 .idea/
 .workbuddy/
 src/hybrid/
+
+# GeoGebra 离线 bundle（文件量大，需手动部署）
+LocalGeoGebraServer/GeoGebra/
