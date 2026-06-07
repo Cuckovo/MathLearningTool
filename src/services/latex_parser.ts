@@ -25,8 +25,8 @@ export function extractLatex(content: string): string[] {
 
 /** 将 LaTeX 标记转为可渲染格式（mp-html 兼容） */
 export function wrapForRender(content: string): string {
-  // 将 $$...$$ 转为块级公式标记
-  let result = content.replace(/\$\$([\s\S]*?)\$\$/g, '<div class="latex-block">$$1$$</div>')
+  // 将 $$...$$ 转为块级公式标记（使用 $1 捕获组引用）
+  let result = content.replace(/\$\$([\s\S]*?)\$\$/g, '<div class="latex-block">$1</div>')
 
   // 将 $...$ 转为行内公式标记
   result = result.replace(/(?<!\$)\$(?!\$)(.*?)\$(?!\$)/g, '<span class="latex-inline">$1</span>')

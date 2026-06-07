@@ -41,8 +41,8 @@ export function parse(rawContent: string): ParsedAiResponse {
     const imageJudgment = extractImageJudgment(rawContent)
     const functionExpr = extractFunctionExpression(rawContent)
 
-    // 判断是否可绘制：图像判断包含"可绘制"且表达式非空
-    const canPlot = imageJudgment.includes('可绘制') && functionExpr !== ''
+    // 判断是否可绘制：排除"不可绘制"，且包含"可绘制"，且表达式非空
+    const canPlot = !imageJudgment.includes('不可绘制') && imageJudgment.includes('可绘制') && functionExpr !== ''
 
     return {
       solvingProcess,
