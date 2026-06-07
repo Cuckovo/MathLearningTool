@@ -1,0 +1,114 @@
+classDiagram
+    direction TB
+
+    class ChatMessage {
+        +string role
+        +string content
+        +number timestamp
+        +string[] latex
+        +boolean hasFunction
+        +string functionExpr
+        +string summary
+    }
+
+    class ChatSession {
+        +string id
+        +string title
+        +ChatMessage[] messages
+        +number createdAt
+        +number updatedAt
+        +addMessage(message: ChatMessage) void
+        +updateTitle(title: string) void
+    }
+
+    class GeoGebraState {
+        +string pendingExpression
+        +boolean isRendering
+        +setPending(expr: string) void
+        +clearPending() void
+    }
+
+    class AppConfig {
+        +string apiKey
+        +boolean isInitialized
+        +setApiKey(key: string) void
+        +checkInitialized() boolean
+    }
+
+    class StorageService {
+        -string prefix
+        +getChatList() ChatListItem[]
+        +getChat(id: string) ChatSession
+        +saveChat(chat: ChatSession) void
+        +deleteChat(id: string) void
+        +getApiKey() string
+        +setApiKey(key: string) void
+        +exportChats() string
+        +enforceChatLimit() void
+    }
+
+    class DeepSeekService {
+        -string baseUrl
+        -string model
+        +sendMessage(apiKey: string, messages: ChatMessage[]) Promise~ChatMessage~
+        +validateApiKey(apiKey: string) Promise~boolean~
+        +summarize(apiKey: string, messages: ChatMessage[]) Promise~string~
+    }
+
+    class AiResponseParser {
+        +parse(rawContent: string) ParsedAiResponse
+        -extractSolvingProcess(content: string) string
+        -extractImageJudgment(content: string) string
+        -extractFunctionExpression(content: string) string
+    }
+
+    class LatexParser {
+        +extractLatex(content: string) string[]
+        +wrapForRender(content: string) string
+    }
+
+    class ParsedAiResponse {
+        +string solvingProcess
+        +string imageJudgment
+        +string functionExpr
+        +boolean canPlot
+    }
+
+    class ChatStore {
+        -ChatSession[] chatList
+        -ChatSession activeChat
+        +loadChats() void
+        +createChat() ChatSession
+        +switchChat(id: string) void
+        +sendMessage(content: string) Promise~void~
+        +requestSummary() Promise~void~
+        +sendToGeoGebra() void
+        +deleteChat(id: string) void
+        +exportChats() string
+    }
+
+    class GeoGebraStore {
+        -string pendingExpression
+        -boolean isRendering
+        +setPending(expr: string) void
+        +clearPending() void
+    }
+
+    class AppStore {
+        -string apiKey
+        -boolean isInitialized
+        +initApiKey(key: string) Promise~boolean~
+        +checkInitState() void
+    }
+
+    ChatSession "1" *-- "0..*" ChatMessage : contains
+    ChatStore "1" *-- "0..*" ChatSession : manages
+    ChatStore --> DeepSeekService : calls
+    ChatStore --> AiResponseParser : uses
+    ChatStore --> StorageService : persists
+    ChatStore --> GeoGebraStore : sets pending
+    AppStore --> StorageService : reads/writes
+    AppStore --> DeepSeekService : validates
+    DeepSeekService ..> ChatMessage : creates
+    AiResponseParser ..> ParsedAiResponse : outputs
+    LatexParser ..> ChatMessage : processes

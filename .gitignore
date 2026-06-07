@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.uno/
+.output/
+.cache/
+.temp/
+*.local
+*.log
+.DS_Store
+Thumbs.db
+.env
+!.env.example

@@ -1,0 +1,244 @@
+/* ===== 全局基础样式与语义别名覆盖 ===== */
+
+/* 基础重置 */
+page {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-md);
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  background: var(--color-bg-page);
+}
+
+view,
+text {
+  box-sizing: border-box;
+}
+
+/* 通用容器 */
+.container {
+  width: 100%;
+  padding: 0 var(--space-4);
+  margin: 0 auto;
+}
+
+/* 按钮基础 */
+.btn {
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  line-height: 1.4;
+}
+
+.btn-primary {
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+}
+
+.btn-primary:active {
+  background: var(--button-primary-bg-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-border-brand);
+  color: var(--color-primary);
+}
+
+.btn-danger {
+  background: var(--button-danger-bg);
+  color: var(--button-danger-text);
+}
+
+/* 输入框 */
+.input {
+  width: 100%;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-default);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  padding: 10px 12px;
+  font: inherit;
+  font-size: var(--font-size-md);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-border-brand);
+  box-shadow: 0 0 0 3px var(--dayq-highlight-brand);
+}
+
+/* ===== 对话气泡样式 ===== */
+.chat-bubble {
+  max-width: 80%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.chat-bubble--user {
+  background: var(--color-primary);
+  color: var(--button-primary-text);
+  border-bottom-right-radius: var(--space-1);
+  align-self: flex-end;
+}
+
+.chat-bubble--assistant {
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-soft);
+  border-bottom-left-radius: var(--space-1);
+  align-self: flex-start;
+}
+
+/* 函数表达式标签 */
+.fn-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  margin-top: var(--space-2);
+}
+
+/* ===== 按钮灰度样式 ===== */
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.18s ease;
+  border: 1px solid var(--color-border-brand);
+  background: var(--color-bg-surface);
+  color: var(--color-primary);
+}
+
+.action-btn:active {
+  background: var(--color-primary-soft);
+}
+
+.action-btn--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: var(--color-border-default);
+  color: var(--color-text-disabled);
+  background: var(--color-bg-page);
+}
+
+.action-btn--disabled:active {
+  background: var(--color-bg-page);
+}
+
+/* ===== 抽屉动画 ===== */
+.drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 100;
+  transition: opacity 0.3s ease;
+}
+
+.drawer-overlay--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.drawer-panel {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  z-index: 101;
+  background: var(--color-bg-surface);
+  transition: transform 0.3s ease;
+}
+
+.drawer-panel--left {
+  left: 0;
+  width: 80%;
+  max-width: 360px;
+  transform: translateX(-100%);
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1);
+}
+
+.drawer-panel--left.drawer-panel--visible {
+  transform: translateX(0);
+}
+
+.drawer-panel--bottom {
+  left: 0;
+  right: 0;
+  max-height: 70vh;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  transform: translateY(100%);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.drawer-panel--bottom.drawer-panel--visible {
+  transform: translateY(0);
+}
+
+/* ===== 加载指示器 ===== */
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-border-default);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== 空状态 ===== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-4);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
+.empty-state__icon {
+  font-size: 48px;
+  margin-bottom: var(--space-4);
+}
+
+/* ===== 安全区域 ===== */
+.safe-area-bottom {
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}

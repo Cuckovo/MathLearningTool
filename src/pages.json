@@ -1,0 +1,42 @@
+{
+  "pages": [
+    {
+      "path": "pages/ai_chat/index",
+      "style": {
+        "navigationBarTitleText": "AI对话"
+      }
+    },
+    {
+      "path": "pages/geo_tool/index",
+      "style": {
+        "navigationBarTitleText": "Geo工具"
+      }
+    },
+    {
+      "path": "pages/init/api_key_init",
+      "style": {
+        "navigationBarTitleText": "初始化"
+      }
+    }
+  ],
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#90c208",
+    "list": [
+      {
+        "pagePath": "pages/geo_tool/index",
+        "text": "Geo工具"
+      },
+      {
+        "pagePath": "pages/ai_chat/index",
+        "text": "AI对话"
+      }
+    ]
+  },
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "高数函数图像解题工具",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f6f6f6"
+  }
+}

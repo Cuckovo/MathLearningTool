@@ -1,0 +1,132 @@
+%% 4.1 API Key 初始化流程
+sequenceDiagram
+    actor User
+    participant App as App.vue
+    participant AppStore as app_store
+    participant Storage as StorageService
+    participant DeepSeek as DeepSeekService
+    participant InitPage as api_key_init.vue
+
+    User->>App: 启动应用
+    App->>AppStore: checkInitState()
+    AppStore->>Storage: getApiKey()
+    alt 已存储 API Key
+        Storage-->>AppStore: apiKey
+        AppStore-->>App: isInitialized = true
+        App->>App: 跳转到 TabBar 主页面
+    else 未存储 API Key
+        Storage-->>AppStore: null
+        AppStore-->>App: isInitialized = false
+        App->>InitPage: 显示 API Key 初始化引导页
+        User->>InitPage: 填写 API Key
+        User->>InitPage: 点击"验证并保存"
+        InitPage->>AppStore: initApiKey(key)
+        AppStore->>DeepSeek: validateApiKey(key)
+        DeepSeek->>DeepSeek: 发送测试请求到 DeepSeek API
+        alt 验证成功
+            DeepSeek-->>AppStore: true
+            AppStore->>Storage: setApiKey(key)
+            AppStore-->>InitPage: 初始化成功
+            InitPage->>App: 跳转到 TabBar 主页面
+        else 验证失败
+            DeepSeek-->>AppStore: false
+            AppStore-->>InitPage: 验证失败提示
+            InitPage->>User: 显示"API Key 无效，请检查后重试"
+        end
+    end
+
+%% 4.2 AI 对话流程
+sequenceDiagram
+    actor User
+    participant ChatPage as ai_chat/index.vue
+    participant ChatStore as chat_store
+    participant DeepSeek as DeepSeekService
+    participant Parser as AiResponseParser
+    participant Latex as LatexParser
+    participant Storage as StorageService
+    participant GeoStore as geogebra_store
+
+    User->>ChatPage: 输入数学问题
+    User->>ChatPage: 点击发送
+    ChatPage->>ChatStore: sendMessage(content)
+    ChatStore->>ChatStore: 创建 user ChatMessage
+    ChatStore->>DeepSeek: sendMessage(apiKey, messages)
+    DeepSeek->>DeepSeek: 组装系统提示词 + 对话历史
+    DeepSeek->>DeepSeek: 调用 DeepSeek Chat API
+    DeepSeek-->>ChatStore: raw AI response
+
+    ChatStore->>Parser: parse(rawContent)
+    Parser->>Parser: extractSolvingProcess()
+    Parser->>Parser: extractImageJudgment()
+    Parser->>Parser: extractFunctionExpression()
+    Parser-->>ChatStore: ParsedAiResponse
+
+    ChatStore->>Latex: extractLatex(solvingProcess)
+    Latex-->>ChatStore: latex[]
+
+    ChatStore->>ChatStore: 构建 assistant ChatMessage
+    Note over ChatStore: hasFunction = canPlot<br/>functionExpr = expr<br/>latex = []
+
+    ChatStore->>Storage: saveChat(activeChat)
+    Storage->>Storage: enforceChatLimit()
+    Storage-->>ChatStore: 保存完成
+
+    ChatStore-->>ChatPage: 响应式更新 UI
+    ChatPage->>ChatPage: 渲染消息 + LaTeX 公式
+    ChatPage->>ChatPage: 更新按钮状态
+
+    alt canPlot = true && functionExpr 有效
+        ChatPage->>ChatPage: 📈按钮可用
+    else canPlot = false 或解析失败
+        ChatPage->>ChatPage: 📈按钮灰度 disable
+    end
+
+    opt 用户点击 📝总结
+        User->>ChatPage: 点击 📝总结
+        ChatPage->>ChatStore: requestSummary()
+        ChatStore->>DeepSeek: summarize(apiKey, messages)
+        DeepSeek-->>ChatStore: summary content
+        ChatStore->>ChatStore: 更新 ChatMessage.summary
+        ChatStore->>Storage: saveChat(activeChat)
+        ChatStore-->>ChatPage: 显示总结面板
+    end
+
+    opt 用户点击 📈发送到 GeoGebra
+        User->>ChatPage: 点击 📈发送到 GeoGebra
+        ChatPage->>ChatStore: sendToGeoGebra()
+        ChatStore->>GeoStore: setPending(functionExpr)
+        ChatPage->>ChatPage: uni.switchTab(geo_tool)
+    end
+
+%% 4.3 GeoGebra 联动流程
+sequenceDiagram
+    actor User
+    participant ChatPage as ai_chat/index.vue
+    participant ChatStore as chat_store
+    participant GeoStore as geogebra_store
+    participant GeoPage as geo_tool/index.vue
+    participant WebView as geogebra_webview.vue
+    participant GeoHTML as geogebra.html
+
+    User->>ChatPage: 点击 📈发送到 GeoGebra
+    ChatPage->>ChatStore: sendToGeoGebra()
+    ChatStore->>GeoStore: setPending(functionExpr)
+    ChatPage->>ChatPage: uni.switchTab("pages/geo_tool/index")
+
+    Note over GeoPage: Tab 切换，geo_tool 页面激活
+    GeoPage->>GeoStore: 读取 pendingExpression
+    GeoPage->>WebView: 传入 expression
+
+    alt H5 端
+        WebView->>GeoHTML: postMessage({ type: "plot", expr })
+        GeoHTML->>GeoHTML: 接收消息 → ggbApplet.evalCommand("f(x) = expr")
+    else 微信小程序端
+        WebView->>GeoHTML: evalJS("plotFunction('expr')")
+        GeoHTML->>GeoHTML: 执行 plotFunction → ggbApplet.evalCommand()
+    end
+
+    GeoHTML-->>WebView: 渲染完成
+    GeoStore->>GeoStore: clearPending()
+    User->>GeoHTML: 交互操作（缩放/平移/调整参数）
+    User->>GeoPage: 点击「AI对话」Tab
+    GeoPage->>GeoPage: uni.switchTab("pages/ai_chat/index")

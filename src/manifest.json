@@ -1,0 +1,27 @@
+{
+  "name": "math-learning-tool",
+  "appid": "__UNI__MLT",
+  "description": "高数函数图像解题工具",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "h5": {
+    "title": "高数函数图像解题工具",
+    "router": {
+      "mode": "hash",
+      "base": "./"
+    },
+    "devServer": {
+      "port": 5173,
+      "disableHostCheck": true
+    },
+    "sdkConfigs": {}
+  },
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false
+    },
+    "usingComponents": true
+  }
+}
