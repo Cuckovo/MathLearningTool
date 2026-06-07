@@ -56,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAppStore } from '../../stores/app_store'
 import { getConfig } from '../../utils/env_config'
 
@@ -67,6 +67,16 @@ const apiKeyInput = ref<string>('')
 const showKey = ref<boolean>(false)
 const isValidating = ref<boolean>(false)
 const errorMsg = ref<string>('')
+
+// 页面加载时检查是否已有默认 Key
+onMounted(() => {
+  const defaultKey = appStore.getDefaultApiKey()
+  if (defaultKey) {
+    apiKeyInput.value = defaultKey
+    // 有默认 Key，自动验证并跳转
+    handleValidate()
+  }
+})
 
 async function handleValidate(): Promise<void> {
   const key = apiKeyInput.value.trim()

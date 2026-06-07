@@ -3,19 +3,18 @@
     <!-- 遮罩层 -->
     <view
       class="drawer-overlay"
-      :class="{ 'drawer-overlay--hidden': !visible }"
-      @tap="handleClose"
+      @click="handleClose"
     ></view>
 
     <!-- 面板 -->
-    <view class="drawer-panel drawer-panel--bottom" :class="{ 'drawer-panel--visible': visible }">
+    <view class="drawer-panel drawer-panel--bottom drawer-panel--visible">
       <view class="summary-header">
         <text class="summary-title">📝 对话总结</text>
         <view class="summary-actions">
-          <view class="copy-btn" @tap="handleCopy">
+          <view class="copy-btn" @click="handleCopy">
             <text>复制</text>
           </view>
-          <view class="close-btn" @tap="handleClose">
+          <view class="close-btn" @click="handleClose">
             <text>✕</text>
           </view>
         </view>
@@ -62,7 +61,6 @@ function handleCopy(): void {
   right: 0;
   bottom: 0;
   z-index: 200;
-  pointer-events: none;
 }
 
 .drawer-overlay {
@@ -72,13 +70,6 @@ function handleCopy(): void {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.45);
-  transition: opacity 0.3s ease;
-  pointer-events: auto;
-}
-
-.drawer-overlay--hidden {
-  opacity: 0;
-  pointer-events: none;
 }
 
 .drawer-panel {
@@ -90,15 +81,14 @@ function handleCopy(): void {
   background: var(--color-bg-surface);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);
-  transform: translateY(100%);
-  transition: transform 0.3s ease;
-  pointer-events: auto;
   display: flex;
   flex-direction: column;
+  animation: slideUp 0.3s ease;
 }
 
-.drawer-panel--visible {
-  transform: translateY(0);
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 .summary-header {

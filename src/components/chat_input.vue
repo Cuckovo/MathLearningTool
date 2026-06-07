@@ -61,7 +61,6 @@ function handleSend(): void {
 <style scoped>
 .chat-input-wrapper {
   background: var(--color-bg-surface);
-  border-top: 1px solid var(--color-border-soft);
   padding: var(--space-2) var(--space-3);
 }
 

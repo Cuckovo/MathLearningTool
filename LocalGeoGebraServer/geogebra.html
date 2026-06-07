@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeoGebra 工具</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #ffffff;
+    }
+    #ggb-element {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="ggb-element"></div>
+
+  <!-- GeoGebra JavaScript API（本地部署，不从 CDN 加载） -->
+  <script src="GeoGebra/deployggb.js"></script>
+  <script>
+    // GeoGebra Applet 实例
+    var ggbApp = null;
+    var LOG_PREFIX = '[GeoGebra-Backend]';
+
+    // 日志函数
+    function log() {
+      var args = Array.prototype.slice.call(arguments);
+      args.unshift(LOG_PREFIX);
+      console.log.apply(console, args);
+    }
+
+    function logError() {
+      var args = Array.prototype.slice.call(arguments);
+      args.unshift(LOG_PREFIX + ' [ERROR]');
+      console.error.apply(console, args);
+    }
+
+    function logWarn() {
+      var args = Array.prototype.slice.call(arguments);
+      args.unshift(LOG_PREFIX + ' [WARN]');
+      console.warn.apply(console, args);
+    }
+
+    // 解析 URL 参数中的表达式
+    function getExpressionFromUrl() {
+      log('Parsing URL parameters...');
+      var params = new URLSearchParams(window.location.search);
+      var expr = params.get('expr') || '';
+      log('URL parameters:', window.location.search);
+      log('Extracted expression from URL:', expr);
+      return expr;
+    }
+
+    // 初始化 GeoGebra Applet
+    function initGeogebra() {
+      log('Initializing GeoGebra Applet...');
+      log('Window dimensions:', window.innerWidth, 'x', window.innerHeight);
+      
+      var params = {
+        "appName": "graphing",
+        "width": window.innerWidth,
+        "height": window.innerHeight,
+        "showToolBar": true,
+        "showAlgebraInput": true,
+        "showMenuBar": false,
+        "allowStyleBar": true,
+        "showResetIcon": true,
+        "enableLabelDrags": true,
+        "enableShiftDragZoom": true,
+        "enableRightClick": true,
+        "showToolBarHelp": false,
+        "errorDialogsActive": false,
+        "useBrowserForJS": false,
+        "allowUpscale": true,
+        "autoHeight": false,
+        "playButton": false,
+        "canFullscreen": true,
+        "appletOnLoad": function(api) {
+          ggbApp = api;
+          log('Applet loaded successfully');
+          log('Applet API methods available:', Object.keys(api).filter(function(k) { return typeof api[k] === 'function'; }).join(', '));
+
+          // 通知父窗口 GeoGebra 已就绪
+          if (window.parent && window.parent !== window) {
+            log('Notifying parent window: ggbReady');
+            window.parent.postMessage({ type: 'ggbReady' }, '*');
+          }
+
+          // 检查 URL 参数中是否有待绘制表达式
+          var expr = getExpressionFromUrl();
+          if (expr) {
+            log('Found expression in URL, plotting:', expr);
+            plotFunction(expr);
+          } else {
+            log('No expression found in URL');
+          }
+        }
+      };
+
+      log('Creating GGBApplet with params:', JSON.stringify(params, null, 2));
+      var ggbApp1 = new GGBApplet(params, true);
+
+      // ⭐ 关键：设置本地代码库路径，启用离线模式
+      log('Setting HTML5Codebase: GeoGebra/HTML5/5.0/web3d/');
+      ggbApp1.setHTML5Codebase("GeoGebra/HTML5/5.0/web3d/", true);
+
+      log('Injecting applet into #ggb-element...');
+      ggbApp1.inject('ggb-element');
+      log('Applet injection initiated');
+    }
+
+    /**
+     * 绘制函数
+     * 每次新函数先清空画布（D15 决策）
+     */
+    function plotFunction(expression) {
+      log('plotFunction called with expression:', expression);
+      
+      if (!ggbApp) {
+        logWarn('Applet not ready, retrying in 500ms...');
+        setTimeout(function() { plotFunction(expression); }, 500);
+        return;
+      }
+
+      // D15: 每次新函数先清空画布
+      log('Clearing canvas (removeAll)...');
+      ggbApp.removeAll();
+      log('Canvas cleared, plotting:', expression);
+
+      // 先尝试 f(x) = expr 格式
+      var command = expression;
+      if (expression.indexOf('=') === -1 && expression.indexOf('(') === -1) {
+        // 简单表达式如 "2/x"，补上 f(x)=
+        command = 'f(x) = ' + expression;
+        log('Expression does not contain "=" or "(", prepending "f(x) = ":', command);
+      } else {
+        log('Expression already contains "=" or "(", using as-is:', command);
+      }
+
+      log('Executing evalCommand:', command);
+      var success = ggbApp.evalCommand(command);
+      log('evalCommand result:', success);
+
+      if (!success) {
+        logWarn('First attempt failed, trying fallback with "f(x) = " prefix');
+        var fallbackCommand = 'f(x) = ' + expression;
+        log('Executing fallback evalCommand:', fallbackCommand);
+        var success2 = ggbApp.evalCommand(fallbackCommand);
+        log('Fallback evalCommand result:', success2);
+        
+        if (!success2) {
+          logError('Both attempts failed, could not plot expression:', expression);
+        }
+      } else {
+        log('Function plotted successfully');
+      }
+    }
+
+    // 监听 postMessage（H5 端通信，用于已加载后更新函数）
+    window.addEventListener('message', function(event) {
+      log('Received postMessage:', event.data);
+      var data = event.data;
+      if (data && data.type === 'plotFunction' && data.expression) {
+        log('postMessage type is plotFunction, expression:', data.expression);
+        plotFunction(data.expression);
+      } else {
+        log('postMessage ignored, type:', data ? data.type : 'undefined');
+      }
+    });
+
+    // 暴露全局接口（小程序 evalJS 调用）
+    window.plotFunction = plotFunction;
+    log('Global plotFunction exposed at window.plotFunction');
+
+    // 页面加载完成后初始化
+    log('Setting up DOMContentLoaded listener...');
+    window.addEventListener('DOMContentLoaded', function() {
+      log('DOMContentLoaded fired, calling initGeogebra...');
+      initGeogebra();
+    });
+    
+    // 备用初始化
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      log('Document already ready (readyState:', document.readyState, '), calling initGeogebra directly...');
+      initGeogebra();
+    } else {
+      log('Document not ready yet (readyState:', document.readyState, '), waiting for DOMContentLoaded...');
+    }
+  </script>
+</body>
+</html>

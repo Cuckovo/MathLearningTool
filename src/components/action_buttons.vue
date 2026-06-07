@@ -47,7 +47,6 @@ function handleSendToGeoGebra(): void {
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   background: var(--color-bg-surface);
-  border-top: 1px solid var(--color-border-soft);
 }
 
 .action-btn {

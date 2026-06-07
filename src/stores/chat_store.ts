@@ -163,18 +163,27 @@ export const useChatStore = defineStore('chat', () => {
 
   /** 发送函数表达式到 GeoGebra */
   function sendToGeoGebra(): void {
-    if (!activeChat.value) return
+    console.log('[ChatStore] sendToGeoGebra called')
+    if (!activeChat.value) {
+      console.log('[ChatStore] No active chat, aborting')
+      return
+    }
 
     const messages = activeChat.value.messages
+    console.log('[ChatStore] Searching for function expression in', messages.length, 'messages')
+    
     for (let i = messages.length - 1; i >= 0; i--) {
       if (messages[i].role === 'assistant' && messages[i].hasFunction && messages[i].functionExpr) {
+        console.log('[ChatStore] Found function expression:', messages[i].functionExpr)
         const geogebraStore = useGeogebraStore()
         geogebraStore.setPending(messages[i].functionExpr as string)
+        console.log('[ChatStore] Calling uni.switchTab to /pages/geo_tool/index')
         // 切换到 Geo 工具 Tab
         uni.switchTab({ url: '/pages/geo_tool/index' })
         return
       }
     }
+    console.log('[ChatStore] No function expression found in messages')
   }
 
   /** 删除聊天 */

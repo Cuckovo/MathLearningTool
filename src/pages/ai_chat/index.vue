@@ -38,19 +38,20 @@
       </view>
     </scroll-view>
 
-    <!-- 功能按钮区 -->
-    <action-buttons
-      :can-summarize="canSummarize"
-      :can-plot="canPlot"
-      @summary="handleSummary"
-      @send-to-geo-gebra="handleSendToGeoGebra"
-    />
+    <!-- 功能按钮区 + 底部输入区 -->
+    <view class="chat-bottom-area">
+      <action-buttons
+        :can-summarize="canSummarize"
+        :can-plot="canPlot"
+        @summary="handleSummary"
+        @send-to-geo-gebra="handleSendToGeoGebra"
+      />
 
-    <!-- 底部输入区 -->
-    <chat-input
-      :disabled="isLoading"
-      @send="handleSend"
-    />
+      <chat-input
+        :disabled="isLoading"
+        @send="handleSend"
+      />
+    </view>
 
     <!-- 历史记录抽屉 -->
     <history-drawer
@@ -61,8 +62,9 @@
       @export="handleExport"
     />
 
-    <!-- 总结面板 -->
+    <!-- 总结面板（v-if 确保关闭时完全从 DOM 移除，不遮挡底部输入区） -->
     <summary-panel
+      v-if="showSummary"
       :visible="showSummary"
       :content="summaryContent"
       @close="showSummary = false"
@@ -178,6 +180,7 @@ function handleExport(): void {
   flex-direction: column;
   height: 100vh;
   background: var(--color-bg-page);
+  overflow: hidden;
 }
 
 .chat-navbar {
@@ -188,6 +191,7 @@ function handleExport(): void {
   background: var(--color-bg-surface);
   border-bottom: 1px solid var(--color-border-soft);
   height: 48px;
+  flex-shrink: 0;
 }
 
 .navbar-left,
@@ -212,6 +216,7 @@ function handleExport(): void {
   flex: 1;
   overflow-y: auto;
   padding: var(--space-4);
+  min-height: 0;
 }
 
 .messages-container {
@@ -231,5 +236,12 @@ function handleExport(): void {
 
 .loading-text {
   color: var(--color-text-tertiary);
+}
+
+/* 底部区域：按钮 + 输入框，固定在底部 */
+.chat-bottom-area {
+  flex-shrink: 0;
+  background: var(--color-bg-surface);
+  border-top: 1px solid var(--color-border-soft);
 }
 </style>

@@ -13,19 +13,41 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { computed, onMounted, onUnmounted } from 'vue'
+import { onShow, onHide } from '@dcloudio/uni-app'
 import { useGeogebraStore } from '../../stores/geogebra_store'
 import GeogebraWebview from '../../components/geogebra_webview.vue'
 
+const LOG_PREFIX = '[GeoToolPage]'
 const geogebraStore = useGeogebraStore()
 const pendingExpression = computed(() => geogebraStore.pendingExpression)
 
+onMounted(() => {
+  console.log(`${LOG_PREFIX} Page mounted`)
+  console.log(`${LOG_PREFIX} Current pendingExpression:`, pendingExpression.value)
+})
+
 onShow(() => {
+  console.log(`${LOG_PREFIX} Page shown (tab switched to this page)`)
+  console.log(`${LOG_PREFIX} Current pendingExpression:`, pendingExpression.value)
+  
   // 检测待渲染函数（从 AI 对话页发送过来）
   if (geogebraStore.pendingExpression) {
+    console.log(`${LOG_PREFIX} Found pending expression:`, geogebraStore.pendingExpression)
     // 表达式已通过 prop 传递给 webview，等待渲染
+  } else {
+    console.log(`${LOG_PREFIX} No pending expression`)
   }
+})
+
+onHide(() => {
+  console.log(`${LOG_PREFIX} Page hidden (tab switched away)`)
+  console.log(`${LOG_PREFIX} Preserving state, pendingExpression:`, pendingExpression.value)
+  // 不清除 pendingExpression，保留状态
+})
+
+onUnmounted(() => {
+  console.log(`${LOG_PREFIX} Page unmounted (should not happen with tabBar)`)
 })
 </script>
 

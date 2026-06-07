@@ -7,6 +7,7 @@ interface EnvConfig {
   geogebraServerUrl: string
   deepseekApiBaseUrl: string
   deepseekModel: string
+  deepseekDefaultApiKey: string
   appTitle: string
   storageKeyPrefix: string
   maxChatCount: number
@@ -24,6 +25,7 @@ export function getEnvConfig(): EnvConfig {
     geogebraServerUrl: getEnvVar('VITE_GEOGEBRA_SERVER_URL', 'http://localhost:8080/geogebra.html'),
     deepseekApiBaseUrl: getEnvVar('VITE_DEEPSEEK_API_BASE_URL', 'https://api.deepseek.com'),
     deepseekModel: getEnvVar('VITE_DEEPSEEK_MODEL', 'deepseek-chat'),
+    deepseekDefaultApiKey: getEnvVar('VITE_DEEPSEEK_DEFAULT_API_KEY', ''),
     appTitle: getEnvVar('VITE_APP_TITLE', '高数函数图像解题工具'),
     storageKeyPrefix: getEnvVar('VITE_STORAGE_KEY_PREFIX', 'mlt_'),
     maxChatCount: parseInt(getEnvVar('VITE_MAX_CHAT_COUNT', '10'), 10),
