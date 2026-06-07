@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeoGebra 工具</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #ffffff;
+    }
+    #ggb-element {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="ggb-element"></div>
+
+  <!-- GeoGebra JavaScript API -->
+  <script src="https://www.geogebra.org/apps/deployggb.js"></script>
+  <script>
+    // GeoGebra Applet 实例
+    var ggbApp = null;
+
+    // 解析 URL 参数中的表达式
+    function getExpressionFromUrl() {
+      var params = new URLSearchParams(window.location.search);
+      return params.get('expr') || '';
+    }
+
+    // 初始化 GeoGebra Applet
+    function initGeogebra() {
+      var ggbApp1 = new GGBApplet({
+        "appName": "graphing",
+        "width": window.innerWidth,
+        "height": window.innerHeight,
+        "showToolBar": true,
+        "showAlgebraInput": true,
+        "showMenuBar": false,
+        "allowStyleBar": true,
+        "showResetIcon": true,
+        "enableLabelDrags": true,
+        "enableShiftDragZoom": true,
+        "enableRightClick": true,
+        "showToolBarHelp": false,
+        "errorDialogsActive": false,
+        "useBrowserForJS": false,
+        "allowUpscale": true,
+        "autoHeight": false,
+        "playButton": false,
+        "canFullscreen": true,
+        "scaleContainerClass": "ggb-container",
+        "allowUpscale": true,
+        "appletOnLoad": function(api) {
+          ggbApp = api;
+          console.log('[GeoGebra] Applet loaded');
+
+          // 检查 URL 参数中是否有待绘制表达式
+          var expr = getExpressionFromUrl();
+          if (expr) {
+            plotFunction(expr);
+          }
+        }
+      }, true);
+
+      ggbApp1.inject('ggb-element');
+    }
+
+    /**
+     * 绘制函数
+     * 每次新函数先清空画布（D15 决策）
+     */
+    function plotFunction(expression) {
+      if (!ggbApp) {
+        console.warn('[GeoGebra] Applet not ready, retrying...');
+        setTimeout(function() { plotFunction(expression); }, 500);
+        return;
+      }
+
+      // D15: 每次新函数先清空画布
+      ggbApp.removeAll();
+      console.log('[GeoGebra] Canvas cleared');
+
+      // 绘制新函数
+      var command = 'f(x) = ' + expression;
+      var success = ggbApp.evalCommand(command);
+      console.log('[GeoGebra] Plot command:', command, 'Result:', success);
+
+      if (!success) {
+        // 尝试不带 f(x) = 前缀直接执行
+        success = ggbApp.evalCommand(expression);
+        console.log('[GeoGebra] Fallback command:', expression, 'Result:', success);
+      }
+    }
+
+    // 监听 postMessage（H5 端通信）
+    window.addEventListener('message', function(event) {
+      var data = event.data;
+      if (data && data.type === 'plotFunction' && data.expression) {
+        console.log('[GeoGebra] Received plotFunction:', data.expression);
+        plotFunction(data.expression);
+      }
+    });
+
+    // 暴露全局接口（小程序 evalJS 调用）
+    window.plotFunction = plotFunction;
+
+    // 窗口大小变化时调整
+    window.addEventListener('resize', function() {
+      // GeoGebra 会自动处理 resize
+    });
+
+    // 页面加载完成后初始化
+    window.addEventListener('DOMContentLoaded', initGeogebra);
+    // 备用初始化
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      initGeogebra();
+    }
+  </script>
+</body>
+</html>
