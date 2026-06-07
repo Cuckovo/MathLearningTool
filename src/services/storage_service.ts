@@ -10,14 +10,22 @@ import {
   MAX_CHAT_COUNT,
 } from '../utils/constants'
 
+/** 检测是否为 H5 环境 */
+function isH5(): boolean {
+  // #ifdef H5
+  return true
+  // #endif
+  return false
+}
+
 /** 通用存储读取 */
 function getStorage(key: string): string | null {
-  try {
-    // #ifdef H5
-    return localStorage.getItem(key)
-    // #endif
-  } catch {
-    // fallback
+  if (isH5()) {
+    try {
+      return localStorage.getItem(key)
+    } catch {
+      return null
+    }
   }
   try {
     const value = uni.getStorageSync(key)
@@ -29,13 +37,13 @@ function getStorage(key: string): string | null {
 
 /** 通用存储写入 */
 function setStorage(key: string, value: string): void {
-  try {
-    // #ifdef H5
-    localStorage.setItem(key, value)
+  if (isH5()) {
+    try {
+      localStorage.setItem(key, value)
+    } catch {
+      console.error(`[StorageService] 写入失败: ${key}`)
+    }
     return
-    // #endif
-  } catch {
-    // fallback
   }
   try {
     uni.setStorageSync(key, value)
@@ -46,13 +54,13 @@ function setStorage(key: string, value: string): void {
 
 /** 通用存储删除 */
 function removeStorage(key: string): void {
-  try {
-    // #ifdef H5
-    localStorage.removeItem(key)
+  if (isH5()) {
+    try {
+      localStorage.removeItem(key)
+    } catch {
+      console.error(`[StorageService] 删除失败: ${key}`)
+    }
     return
-    // #endif
-  } catch {
-    // fallback
   }
   try {
     uni.removeStorageSync(key)

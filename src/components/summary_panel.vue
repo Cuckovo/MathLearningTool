@@ -31,7 +31,7 @@
 <script setup lang="ts">
 import LatexRenderer from './latex_renderer.vue'
 
-defineProps<{
+const props = defineProps<{
   visible: boolean
   content: string
 }>()
@@ -45,19 +45,13 @@ function handleClose(): void {
 }
 
 function handleCopy(): void {
-  const props = getCurrentInstance()?.props as { content: string }
-  const text = props?.content || ''
   uni.setClipboardData({
-    data: text,
+    data: props.content,
     success: () => {
       uni.showToast({ title: '已复制到剪贴板', icon: 'success' })
     },
   })
 }
-</script>
-
-<script lang="ts">
-import { getCurrentInstance } from 'vue'
 </script>
 
 <style scoped>
