@@ -66,6 +66,12 @@ function latexToGeogebraExpr(latex: string): string {
   expr = expr.replace(/\\([a-zA-Z]+)/g, '$1') // 去掉剩余的 LaTeX 命令
   console.log(`${LOG_PREFIX} After backslash removal:`, expr)
 
+  // 6.5 处理 "sin x" 格式（函数名+空格+参数）→ 转为 "sin(x)"
+  // AI 可能返回 sin x、cos 2x 等格式（无反斜杠、无花括号）
+  expr = expr.replace(/\b(sin|cos|tan|cot|sec|csc|arcsin|arccos|arctan)\s+([a-zA-Z0-9_]+)/gi, '$1($2)')
+  // 处理 log 2 x → log(2, x) 这种格式较复杂，暂不处理，只处理单参数
+  console.log(`${LOG_PREFIX} After sin x → sin(x) processing:`, expr)
+
   // 7. 处理 \{ \} → 普通括号（LaTeX 转义花括号）
   expr = expr.replace(/\\\{/g, '{').replace(/\\\}/g, '}')
   console.log(`${LOG_PREFIX} After brace escape:`, expr)

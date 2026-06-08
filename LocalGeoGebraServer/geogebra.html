@@ -133,8 +133,14 @@
       }
 
       // D15: 每次新函数先清空画布
-      log('Clearing canvas (removeAll)...');
-      ggbApp.removeAll();
+      // ⚠️ GeoGebra JS API 没有 removeAll()，使用 reset() 代替
+      log('Clearing canvas (reset)...');
+      try {
+        ggbApp.reset();
+      } catch(e) {
+        logWarn('reset() failed, trying evalCommand: ' + e);
+        try { ggbApp.evalCommand('Delete(AllObjects)'); } catch(e2) { logWarn('Delete(AllObjects) also failed: ' + e2); }
+      }
       log('Canvas cleared, plotting:', expression);
 
       // 先尝试 f(x) = expr 格式
