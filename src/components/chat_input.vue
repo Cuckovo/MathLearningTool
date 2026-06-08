@@ -16,7 +16,21 @@
         :disabled="!canSend"
         @tap="handleSend"
       >
+        <!-- #ifdef H5 -->
+        <svg class="send-btn__icon" viewBox="0 0 34 34" width="20" height="20" fill="currentColor">
+          <g clip-path="url(#push_clip)">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M26.245 17.4919L13.1801 11.0406L15.377 15.3232C15.6209 15.8004 15.7326 16.3342 15.7003 16.8691C15.6681 17.4039 15.4932 17.9203 15.1939 18.3647C15.1938 18.3648 15.1938 18.3649 15.1937 18.365L12.5094 22.3563L26.245 17.4919ZM28.0217 18.9844C28.3008 18.8897 28.5458 18.7145 28.7258 18.4809C28.9087 18.2433 29.016 17.9563 29.0337 17.657C29.0515 17.3577 28.9788 17.06 28.8252 16.8026C28.674 16.5493 28.4514 16.3465 28.1855 16.2195L12.7071 8.5765C12.4244 8.43724 12.105 8.39057 11.7943 8.44312C11.4835 8.49566 11.1972 8.64475 10.976 8.86921C10.7548 9.09368 10.6099 9.38212 10.5619 9.6936C10.5139 10.0051 10.5652 10.3238 10.7085 10.6044L13.5962 16.2335C13.5962 16.2336 13.5962 16.2336 13.5963 16.2337C13.6775 16.3927 13.7147 16.5706 13.7039 16.7488C13.6932 16.9271 13.6349 17.0993 13.5351 17.2474L13.5346 17.2481L10.0042 22.4975C9.82874 22.7593 9.74017 23.0697 9.75109 23.3846C9.76201 23.6996 9.87185 24.0031 10.065 24.2521C10.2582 24.5011 10.5249 24.683 10.8273 24.7718C11.1297 24.8607 11.4523 24.852 11.7495 24.7471L28.0217 18.9844Z"/>
+          </g>
+          <defs>
+            <clipPath id="push_clip">
+              <rect width="24" height="24" fill="white" transform="translate(33.8818 17.9441) rotate(138.389)"/>
+            </clipPath>
+          </defs>
+        </svg>
+        <!-- #endif -->
+        <!-- #ifndef H5 -->
         <text>{{ isLoading ? '⏳' : '➤' }}</text>
+        <!-- #endif -->
       </button>
     </view>
   </view>
@@ -66,7 +80,7 @@ function handleSend(): void {
 
 .chat-input-container {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: var(--space-2);
   background: var(--color-bg-elevated);
   border-radius: var(--radius-md);
@@ -107,6 +121,12 @@ function handleSend(): void {
   cursor: pointer;
   flex-shrink: 0;
   transition: 0.18s ease;
+}
+
+.send-btn__icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }
 
 .send-btn:active {
