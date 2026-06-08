@@ -38,10 +38,14 @@ export function extractLatex(content: string): string[] {
  * 将含 LaTeX 标记的内容转为 KaTeX 渲染后的 HTML
  * - $$...$$ → 块级公式（display mode）
  * - $...$ → 行内公式（inline mode）
+ * - \[...\] → 块级公式（display mode，LaTeX 标准）
+ * - \(...\) → 行内公式（inline mode，LaTeX 标准）
  */
 export function wrapForRender(content: string): string {
-  // 先处理 $$...$$ 块级公式，替换为 KaTeX 渲染的 HTML
-  let result = content.replace(/\$\$([\s\S]*?)\$\$/g, (_full: string, expr: string) => {
+  let result = content
+
+  // 1. 先处理 \[...\] 块级公式（LaTeX 标准定界符）
+  result = result.replace(/\\\[([\s\S]*?)\\\]/g, (_full: string, expr: string) => {
     try {
       return katex.renderToString(expr.trim(), {
         displayMode: true,
@@ -53,7 +57,33 @@ export function wrapForRender(content: string): string {
     }
   })
 
-  // 再处理 $...$ 行内公式
+  // 2. 处理 $$...$$ 块级公式
+  result = result.replace(/\$\$([\s\S]*?)\$\$/g, (_full: string, expr: string) => {
+    try {
+      return katex.renderToString(expr.trim(), {
+        displayMode: true,
+        throwOnError: false,
+        strict: false,
+      })
+    } catch {
+      return `<div class="latex-block-fallback">${escapeHtml(expr.trim())}</div>`
+    }
+  })
+
+  // 3. 处理 \(...\) 行内公式（LaTeX 标准定界符）
+  result = result.replace(/\\\(([\s\S]*?)\\\)/g, (_full: string, expr: string) => {
+    try {
+      return katex.renderToString(expr.trim(), {
+        displayMode: false,
+        throwOnError: false,
+        strict: false,
+      })
+    } catch {
+      return `<span class="latex-inline-fallback">${escapeHtml(expr.trim())}</span>`
+    }
+  })
+
+  // 4. 处理 $...$ 行内公式（排除已经处理的 $$）
   result = result.replace(/(?<!\$)\$(?!\$)(.*?)\$(?!\$)/g, (_full: string, expr: string) => {
     try {
       return katex.renderToString(expr.trim(), {
