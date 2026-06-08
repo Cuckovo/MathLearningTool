@@ -22,7 +22,7 @@ function getEnvVar(key: string, defaultValue: string = ''): string {
 /** 获取完整环境配置 */
 export function getEnvConfig(): EnvConfig {
   return {
-    geogebraServerUrl: getEnvVar('VITE_GEOGEBRA_SERVER_URL', 'http://localhost:8080/geogebra.html'),
+    geogebraServerUrl: getEnvVar('VITE_GEOGEBRA_SERVER_URL', 'http://10.50.43.173:8080/geogebra.html'),
     deepseekApiBaseUrl: getEnvVar('VITE_DEEPSEEK_API_BASE_URL', 'https://api.deepseek.com'),
     deepseekModel: getEnvVar('VITE_DEEPSEEK_MODEL', 'deepseek-chat'),
     deepseekDefaultApiKey: getEnvVar('VITE_DEEPSEEK_DEFAULT_API_KEY', ''),
