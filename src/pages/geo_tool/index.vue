@@ -7,13 +7,13 @@
 
     <!-- GeoGebra WebView 展示区 -->
     <view class="geogebra-container">
-      <geogebra-webview :expression="pendingExpression" />
+      <geogebra-webview ref="geoWebviewRef" :expression="pendingExpression" />
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { onShow, onHide } from '@dcloudio/uni-app'
 import { useGeogebraStore } from '../../stores/geogebra_store'
 import GeogebraWebview from '../../components/geogebra_webview.vue'
@@ -22,6 +22,9 @@ const LOG_PREFIX = '[GeoToolPage]'
 const geogebraStore = useGeogebraStore()
 const pendingExpression = computed(() => geogebraStore.pendingExpression)
 
+// 持有 webview 组件引用，用于调用 resetState()
+const geoWebviewRef = ref<InstanceType<typeof GeogebraWebview> | null>(null)
+
 onMounted(() => {
   console.log(`${LOG_PREFIX} 页面已挂载`)
   console.log(`${LOG_PREFIX} 当前 pendingExpression：`, pendingExpression.value)
@@ -29,12 +32,21 @@ onMounted(() => {
 
 onShow(() => {
   console.log(`${LOG_PREFIX} 页面显示（Tab 切换至此页）`)
+
+  /**
+   * ⭐ 关键修复：重置 webview 就绪状态
+   * Tab 切换后 iframe 会重新加载，ggbReady/iframeLoaded 必须清零
+   * 否则 watch 会误判已就绪并提前发送绘图命令（此时 contentWindow 尚为 null）
+   */
+  if (geoWebviewRef.value) {
+    console.log(`${LOG_PREFIX} 重置 GeoGebraWebview 就绪状态`)
+    geoWebviewRef.value.resetState()
+  }
+
   console.log(`${LOG_PREFIX} 当前 pendingExpression：`, pendingExpression.value)
-  
-  // 检测待渲染函数（从 AI 对话页发送过来）
   if (geogebraStore.pendingExpression) {
     console.log(`${LOG_PREFIX} 发现待渲染表达式：`, geogebraStore.pendingExpression)
-    // 表达式已通过 prop 传递给 webview，等待渲染
+    console.log(`${LOG_PREFIX} 等待 GeoGebra Applet 就绪后自动发送`)
   } else {
     console.log(`${LOG_PREFIX} 无待渲染表达式`)
   }
@@ -43,7 +55,6 @@ onShow(() => {
 onHide(() => {
   console.log(`${LOG_PREFIX} 页面隐藏（Tab 切离）`)
   console.log(`${LOG_PREFIX} 保留状态，pendingExpression：`, pendingExpression.value)
-  // 不清除 pendingExpression，保留状态
 })
 
 onUnmounted(() => {
