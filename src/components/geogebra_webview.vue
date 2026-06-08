@@ -160,12 +160,16 @@ watch(
 
 onMounted(() => {
   console.log(`${LOG_PREFIX} 组件已挂载`)
+  // #ifdef H5
   setupMessageListener()
+  // #endif
 })
 
 onUnmounted(() => {
   console.log(`${LOG_PREFIX} 组件已卸载`)
+  // #ifdef H5
   window.removeEventListener('message', messageHandler)
+  // #endif
 })
 
 // 暴露 resetState 供父页面调用
