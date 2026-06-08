@@ -31,21 +31,27 @@ export const useAppStore = defineStore('app', () => {
     return getConfig('deepseekDefaultApiKey')
   }
 
-  /** 检查初始化状态：从存储中读取，若无则尝试使用 .env 默认 Key */
+  /** 检查初始化状态：.env 中的 Key 优先级最高，若无则回退到 localStorage */
   function checkInitState(): void {
-    const savedKey = StorageService.getApiKey()
-    if (savedKey) {
-      apiKey.value = savedKey
+    const defaultKey = getDefaultApiKey()
+
+    // .env 中配置了 Key → 优先使用（自动覆盖 localStorage 旧值）
+    if (defaultKey) {
+      const savedKey = StorageService.getApiKey()
+      if (savedKey !== defaultKey) {
+        // 用户更新了 .env 中的 Key，同步覆盖 localStorage
+        console.log('[AppStore] .env 中 Key 与 localStorage 不一致，使用 .env 中的 Key')
+        StorageService.setApiKey(defaultKey)
+      }
+      apiKey.value = defaultKey
       isInitialized.value = true
       return
     }
 
-    // 若无已保存 Key，检查 .env 中的默认 Key
-    const defaultKey = getDefaultApiKey()
-    if (defaultKey) {
-      // 有默认 Key，自动保存并标记为已初始化
-      StorageService.setApiKey(defaultKey)
-      apiKey.value = defaultKey
+    // .env 未配置 Key → 回退到 localStorage
+    const savedKey = StorageService.getApiKey()
+    if (savedKey) {
+      apiKey.value = savedKey
       isInitialized.value = true
       return
     }
