@@ -5,7 +5,7 @@
       <view class="navbar-left" @tap="showHistory = true">
         <text class="navbar-icon">🕐</text>
       </view>
-      <text class="navbar-title">高数函数图像解题工具</text>
+      <page-switcher current-page="chat" />
       <view class="navbar-right"></view>
     </view>
 
@@ -81,6 +81,7 @@ import ChatInput from '../../components/chat_input.vue'
 import ActionButtons from '../../components/action_buttons.vue'
 import HistoryDrawer from '../../components/history_drawer.vue'
 import SummaryPanel from '../../components/summary_panel.vue'
+import PageSwitcher from '../../components/page_switcher.vue'
 
 const chatStore = useChatStore()
 
@@ -204,12 +205,6 @@ function handleExport(): void {
 .navbar-icon {
   font-size: 20px;
   cursor: pointer;
-}
-
-.navbar-title {
-  font-size: var(--font-size-md);
-  font-weight: 600;
-  color: var(--color-text-primary);
 }
 
 .chat-messages {
