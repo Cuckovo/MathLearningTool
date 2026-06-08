@@ -161,8 +161,9 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  /** 请求 AI 输出手写书面解题过程（以对话消息形式返回） */
+  /** 请求 AI 输出手写书面解题过程（后台静默发送 prompt，仅展示 AI 回复） */
   async function requestMathSolution(): Promise<void> {
+    const appStore = useAppStore()
     if (!activeChat.value) {
       console.warn('[ChatStore] 无活跃对话，跳过数学解题请求')
       return
@@ -177,8 +178,54 @@ export const useChatStore = defineStore('chat', () => {
 4. 最终结果用 \\boxed{结果} 标出
 5. 适当补充文字说明，模拟手写答题纸的排版节奏`
 
-    // 复用 sendMessage 通道，用户看到的是一个"系统请求"作为新消息发出
-    await sendMessage(prompt)
+    const chat = activeChat.value
+
+    // 构建静默消息列表：现有对话 + 提示词（不写入 chat.messages）
+    const promptMessage: ChatMessage = {
+      role: 'user',
+      content: prompt,
+      timestamp: Date.now(),
+    }
+    const apiMessages = [...chat.messages, promptMessage]
+
+    // 立即显示思考中，提示词不在前端展示
+    isLoading.value = true
+
+    try {
+      const aiMessage = await DeepSeekService.sendMessage({
+        apiKey: appStore.apiKey,
+        messages: apiMessages,
+      })
+
+      // 解析 AI 响应
+      const parsed = AiResponseParser.parse(aiMessage.content)
+      const latexList = LatexParser.extractLatex(aiMessage.content)
+      aiMessage.latex = latexList
+      aiMessage.hasFunction = parsed.canPlot
+      aiMessage.functionExpr = parsed.functionExpr
+
+      // 仅将 AI 回复写入对话
+      chat.messages.push(aiMessage)
+      chat.updatedAt = Date.now()
+
+      StorageService.saveChat(chat)
+      loadChats()
+      activeChat.value = { ...chat }
+    } catch (error) {
+      console.error('[ChatStore] 数学解题请求失败:', error)
+      const errorMsg: ChatMessage = {
+        role: 'assistant',
+        content: `解题请求失败，请稍后重试。\n错误：${error instanceof Error ? error.message : String(error)}`,
+        timestamp: Date.now(),
+      }
+      chat.messages.push(errorMsg)
+      chat.updatedAt = Date.now()
+      StorageService.saveChat(chat)
+      loadChats()
+      activeChat.value = { ...chat }
+    } finally {
+      isLoading.value = false
+    }
   }
 
   /** 发送函数表达式到 GeoGebra */
