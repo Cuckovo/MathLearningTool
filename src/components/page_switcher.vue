@@ -3,14 +3,14 @@
     <view class="switcher-track">
       <view
         class="switcher-option"
-        :class="{ active: currentPage === 'geo' }"
+        :class="{ active: activeView === 'geo' }"
         @tap="switchTo('geo')"
       >
         <text class="switcher-label">GeoGebra</text>
       </view>
       <view
         class="switcher-option"
-        :class="{ active: currentPage === 'chat' }"
+        :class="{ active: activeView === 'chat' }"
         @tap="switchTo('chat')"
       >
         <text class="switcher-label">对话</text>
@@ -20,18 +20,15 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  /** 当前所在页面：'chat' = AI对话页，'geo' = GeoGebra页 */
-  currentPage: 'chat' | 'geo'
-}>()
+import { computed } from 'vue'
+import { useGeogebraStore } from '../stores/geogebra_store'
 
-/** 切换到指定 Tab 页 */
-function switchTo(page: 'chat' | 'geo'): void {
-  const paths: Record<string, string> = {
-    chat: '/pages/ai_chat/index',
-    geo: '/pages/geo_tool/index',
-  }
-  uni.switchTab({ url: paths[page] })
+const geogebraStore = useGeogebraStore()
+const activeView = computed(() => geogebraStore.activeView)
+
+/** 切换视图（不卸载页面，v-show 控制显隐） */
+function switchTo(view: 'chat' | 'geo'): void {
+  geogebraStore.switchView(view)
 }
 </script>
 

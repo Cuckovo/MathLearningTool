@@ -177,9 +177,8 @@ export const useChatStore = defineStore('chat', () => {
         console.log('[ChatStore] Found function expression:', messages[i].functionExpr)
         const geogebraStore = useGeogebraStore()
         geogebraStore.setPending(messages[i].functionExpr as string)
-        console.log('[ChatStore] Calling uni.switchTab to /pages/geo_tool/index')
-        // 切换到 Geo 工具 Tab
-        uni.switchTab({ url: '/pages/geo_tool/index' })
+        console.log('[ChatStore] 切换到 GeoGebra 视图')
+        geogebraStore.switchView('geo')
         return
       }
     }
