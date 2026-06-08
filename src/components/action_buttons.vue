@@ -76,7 +76,7 @@ function handleSendToGeoGebra(): void {
   display: flex;
   justify-content: flex-end;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2);
   background: var(--color-bg-surface);
 }
 
@@ -85,7 +85,7 @@ function handleSendToGeoGebra(): void {
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
+  padding: 6px var(--space-3);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   font-weight: 600;
