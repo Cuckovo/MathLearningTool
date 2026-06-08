@@ -8,8 +8,7 @@ dist/
 *.log
 .DS_Store
 Thumbs.db
-.env
-!.env.example
+
 
 .idea/
 .workbuddy/
@@ -17,3 +16,5 @@ src/hybrid/
 
 # GeoGebra 离线 bundle（文件量大，需手动部署）
 LocalGeoGebraServer/GeoGebra/
+.env
+.env
