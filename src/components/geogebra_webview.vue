@@ -86,7 +86,7 @@ function setupMessageListener(): void {
  * 消息处理函数
  * ggbReady 是绘图的"最终触发点"：
  * - 此时 contentWindow 一定可用
- * - pendingExpression 是此刻唯一可信数据源（props.expression 可能已被清空）
+ * - 直接读 store 中的 currentExpression（永久保留，无需担心被清空）
  */
 function messageHandler(event: MessageEvent): void {
   if (event.data && event.data.type === 'ggbReady') {
@@ -94,18 +94,16 @@ function messageHandler(event: MessageEvent): void {
     ggbReady.value = true
     iframeLoaded.value = true
 
-    // 从 store 取表达式（watch 中不再调用 clearPending，表达式仍在 store 中）
-    const exprToPlot = geogebraStore.pendingExpression
+    // 直接读 store 中的表达式（永久保留，不会被清空）
+    const exprToPlot = geogebraStore.currentExpression
     if (exprToPlot) {
-      console.log(`${LOG_PREFIX} GeoGebra 就绪，发送待绘制表达式：`, exprToPlot)
+      console.log(`${LOG_PREFIX} GeoGebra 就绪，发送当前表达式：`, exprToPlot)
       // 延迟 300ms 确保 GeoGebra 内部渲染稳定
       setTimeout(() => {
         sendPlotCommand(exprToPlot)
-        geogebraStore.clearPending()
-        console.log(`${LOG_PREFIX} 绘图命令已发送，pendingExpression 已清空`)
       }, 300)
     } else {
-      console.log(`${LOG_PREFIX} GeoGebra 就绪，无待绘制表达式`)
+      console.log(`${LOG_PREFIX} GeoGebra 就绪，当前无表达式`)
     }
   }
 }
@@ -136,27 +134,26 @@ function sendPlotCommand(expr: string): void {
 /**
  * 监听表达式变化
  * 策略：
- * - 如果 ggbReady=true（GeoGebra 已就绪），直接发送并清空 store
+ * - 如果 ggbReady=true（GeoGebra 已就绪），直接发送（不清空 store）
  * - 如果 ggbReady=false（等待加载），什么都不做，由 messageHandler 在 ggbReady 时处理
- *   ⚠️ 绝对不能在 ggbReady=false 时调用 clearPending，否则表达式会丢失
+ * ⚠️ 不再调用 clearPending / setExpression('')，表达式始终保留在 store
  */
 watch(
   () => props.expression,
   (newExpr, oldExpr) => {
     console.log(`${LOG_PREFIX} 表达式变更：`, { oldExpr, newExpr })
     if (!newExpr || newExpr === oldExpr) {
-      if (!newExpr) console.log(`${LOG_PREFIX} 表达式已清空`)
+      if (!newExpr) console.log(`${LOG_PREFIX} 无新表达式，跳过`)
       return
     }
 
     if (ggbReady.value) {
-      // GeoGebra 已就绪，直接发送
+      // GeoGebra 已就绪，直接发送（store 里已是最新值，无需清空）
       console.log(`${LOG_PREFIX} GeoGebra 已就绪，直接发送绘图命令`)
       sendPlotCommand(newExpr)
-      geogebraStore.clearPending()
     } else {
-      // GeoGebra 未就绪，表达式保留在 store，等 ggbReady 消息触发
-      console.log(`${LOG_PREFIX} GeoGebra 未就绪，表达式已保留在 store，等待 ggbReady 消息`)
+      // GeoGebra 未就绪，表达式留在 store，等 ggbReady 消息触发
+      console.log(`${LOG_PREFIX} GeoGebra 未就绪，表达式已在 store，等待 ggbReady 消息`)
     }
   },
 )
