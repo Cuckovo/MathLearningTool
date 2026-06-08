@@ -81,6 +81,51 @@ function latexToGeogebraExpr(latex: string): string {
   return expr
 }
 
+/**
+ * 清理中文说明和非数学文本
+ * AI 可能在公式后追加描述，如 `$$\frac{1}{x}$$ （当 $x>0$ 时...）`
+ */
+function stripChineseDescription(rawExpr: string): string {
+  let expr = rawExpr.trim()
+
+  // 1. 去掉 $$...$$ 后面的所有内容（包括中文说明）
+  // 匹配 $$formula$$ 或 $$formula$ 后跟随的任意内容，整行截取到 $$ 闭合处
+  const doubleDollarMatch = expr.match(/^(.+?\$\$)/)
+  if (doubleDollarMatch) {
+    expr = doubleDollarMatch[1]
+    console.log(`${LOG_PREFIX} After double-dollar strip:`, expr)
+  }
+
+  // 2. 去掉 $...$ 后面的所有内容（包括中文说明）
+  // 匹配 $formula$ 后跟随的任意内容
+  const singleDollarMatch = expr.match(/^(.+?\$)/)
+  if (singleDollarMatch) {
+    // 确保不是残留的开头 $ 符号
+    const captured = singleDollarMatch[1]
+    if (captured.length > 1 && captured.endsWith('$')) {
+      expr = captured
+      console.log(`${LOG_PREFIX} After single-dollar strip:`, expr)
+    }
+  }
+
+  // 3. 去掉全角括号（中文说明）及其后面的所有内容
+  // 匹配 （当...时...） 这类说明
+  expr = expr.replace(/\uff08.*$/, '') // 全角左括号（
+  expr = expr.replace(/\u3010.*$/, '') // 【
+  expr = expr.replace(/\u201c.*$/, '') // "
+  expr = expr.replace(/\u300c.*$/, '') // 「
+  console.log(`${LOG_PREFIX} After Chinese desc strip:`, expr)
+
+  // 4. 去掉末尾残留的 $ 符号
+  expr = expr.replace(/\$+$/, '')
+  expr = expr.replace(/^\$+/, '')
+
+  // 5. 去掉末尾的换行和多余空格
+  expr = expr.trim()
+
+  return expr
+}
+
 /** 提取【函数表达式】，去除 LaTeX 标记并转为 GeoGebra 可用格式 */
 function extractFunctionExpression(content: string): string {
   console.log(`${LOG_PREFIX} extractFunctionExpression: input length=${content.length}`)
@@ -104,12 +149,9 @@ function extractFunctionExpression(content: string): string {
   expr = expr.replace(/^\$\s*/, '').replace(/\s*\$$/, '')
   console.log(`${LOG_PREFIX} After dollar sign removal:`, expr)
 
-  // 单独重新提取 $$ 中的内容
-  const dollarMatch = expr.match(/^\s*\$?\$?\s*([\s\S]*?)\s*\$?\$?\s*$/)
-  if (dollarMatch) {
-    expr = dollarMatch[1].trim()
-    console.log(`${LOG_PREFIX} After dollar match extraction:`, expr)
-  }
+  // ⭐ 新增：去除中文说明和描述文本
+  expr = stripChineseDescription(expr)
+  console.log(`${LOG_PREFIX} After stripChineseDescription:`, expr)
 
   // 去除 "y = " / "y=" 前缀
   expr = expr.replace(/^y\s*=\s*/i, '')

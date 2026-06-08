@@ -82,11 +82,16 @@ function messageHandler(event: MessageEvent): void {
     console.log(`${LOG_PREFIX} Received ggbReady message from iframe`)
     ggbReady.value = true
     iframeLoaded.value = true
-    
-    // 如果有待渲染的表达式，发送绘图命令
-    if (props.expression) {
-      console.log(`${LOG_PREFIX} GeoGebra ready, sending pending expression:`, props.expression)
-      setTimeout(() => sendPlotCommand(props.expression), 500)
+
+    // ⭐ 修复：以 store 中的 pendingExpression 为唯一数据源，避免 props 被清空后取不到值
+    const exprToPlot = geogebraStore.pendingExpression || props.expression
+    if (exprToPlot) {
+      console.log(`${LOG_PREFIX} GeoGebra ready, sending pending expression:`, exprToPlot)
+      setTimeout(() => {
+        sendPlotCommand(exprToPlot)
+        // 绘制成功后清空 store
+        geogebraStore.clearPending()
+      }, 500)
     }
   }
 }
@@ -95,11 +100,16 @@ function messageHandler(event: MessageEvent): void {
 function onIframeLoad(): void {
   console.log(`${LOG_PREFIX} iframe loaded`)
   iframeLoaded.value = true
-  
-  // iframe 加载完成后，如果有表达式，发送绘图命令
-  if (props.expression) {
-    console.log(`${LOG_PREFIX} iframe loaded, sending plot command:`, props.expression)
-    setTimeout(() => sendPlotCommand(props.expression), 1000)
+
+  // iframe 加载完成后，如果 GeoGebra 已就绪且有表达式，发送绘图命令
+  // ⭐ 以 store 中的 pendingExpression 为唯一数据源
+  const exprToPlot = geogebraStore.pendingExpression || props.expression
+  if (exprToPlot && ggbReady.value) {
+    console.log(`${LOG_PREFIX} iframe loaded (ggbReady), sending plot command:`, exprToPlot)
+    setTimeout(() => {
+      sendPlotCommand(exprToPlot)
+      geogebraStore.clearPending()
+    }, 500)
   }
 }
 
@@ -125,15 +135,18 @@ watch(
   () => props.expression,
   (newExpr, oldExpr) => {
     console.log(`${LOG_PREFIX} Expression changed:`, { oldExpr, newExpr })
-    
+
     if (newExpr && newExpr !== oldExpr) {
       console.log(`${LOG_PREFIX} New expression detected, sending to GeoGebra:`, newExpr)
-      geogebraStore.clearPending()
-      
+      // ⭐ 修复：不再调用 clearPending()，避免表达式在 iframe 加载前被清空
+      // geogebraStore.clearPending() ← 已移除
+
       // 如果 iframe 已加载且 GeoGebra 已就绪，直接发送消息
       if (iframeLoaded.value && ggbReady.value) {
         console.log(`${LOG_PREFIX} GeoGebra ready, sending plotCommand directly`)
         sendPlotCommand(newExpr)
+        // 绘制成功后清空 store
+        geogebraStore.clearPending()
       } else {
         console.log(`${LOG_PREFIX} GeoGebra not ready, will send after iframe loads`)
       }
