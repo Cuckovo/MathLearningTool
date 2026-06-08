@@ -15,18 +15,18 @@ export const useGeogebraStore = defineStore('geogebra', () => {
 
   /** 设置待渲染表达式 */
   function setPending(expr: string): void {
-    console.log(`${LOG_PREFIX} setPending called, expression:`, expr)
+    console.log(`${LOG_PREFIX} setPending 调用，表达式：`, expr)
     pendingExpression.value = expr
     isRendering.value = true
-    console.log(`${LOG_PREFIX} State updated:`, { pendingExpression: pendingExpression.value, isRendering: isRendering.value })
+    console.log(`${LOG_PREFIX} 状态已更新：`, { pendingExpression: pendingExpression.value, isRendering: isRendering.value })
   }
 
   /** 清除待渲染表达式 */
   function clearPending(): void {
-    console.log(`${LOG_PREFIX} clearPending called`)
+    console.log(`${LOG_PREFIX} clearPending 调用`)
     pendingExpression.value = ''
     isRendering.value = false
-    console.log(`${LOG_PREFIX} State cleared:`, { pendingExpression: pendingExpression.value, isRendering: isRendering.value })
+    console.log(`${LOG_PREFIX} 状态已清除：`, { pendingExpression: pendingExpression.value, isRendering: isRendering.value })
   }
 
   return {
