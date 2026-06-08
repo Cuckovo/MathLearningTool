@@ -75,13 +75,7 @@
         @export="handleExport"
       />
 
-      <!-- 总结面板 -->
-      <summary-panel
-        v-if="showSummary"
-        :visible="showSummary"
-        :content="summaryContent"
-        @close="showSummary = false"
-      />
+      <!-- 总结面板（已弃用，保留以供后续使用） -->
     </view>
 
     <!-- ===== GeoGebra 视图 ===== -->
@@ -101,7 +95,6 @@ import ChatMessage from '../../components/chat_message.vue'
 import ChatInput from '../../components/chat_input.vue'
 import ActionButtons from '../../components/action_buttons.vue'
 import HistoryDrawer from '../../components/history_drawer.vue'
-import SummaryPanel from '../../components/summary_panel.vue'
 import PageSwitcher from '../../components/page_switcher.vue'
 import GeogebraWebview from '../../components/geogebra_webview.vue'
 
@@ -116,8 +109,6 @@ const pendingExpression = computed(() => geogebraStore.pendingExpression)
 
 // ── 对话相关状态 ──
 const showHistory = ref<boolean>(false)
-const showSummary = ref<boolean>(false)
-const summaryContent = ref<string>('')
 const scrollTop = ref<number>(0)
 const scrollIntoView = ref<string>('')
 
@@ -174,11 +165,10 @@ async function handleSend(content: string): Promise<void> {
   scrollToBottom()
 }
 
-/** 请求总结 */
+/** 请求手写解题过程（以对话消息形式返回） */
 async function handleSummary(): Promise<void> {
-  const summary = await chatStore.requestSummary()
-  summaryContent.value = summary
-  showSummary.value = true
+  await chatStore.requestMathSolution()
+  scrollToBottom()
 }
 
 /** 发送到 GeoGebra */

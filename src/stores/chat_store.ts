@@ -144,7 +144,7 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  /** 请求 AI 总结当前对话 */
+  /** 请求 AI 总结当前对话（弹窗模式，保留兼容） */
   async function requestSummary(): Promise<string> {
     const appStore = useAppStore()
     if (!activeChat.value) return ''
@@ -159,6 +159,26 @@ export const useChatStore = defineStore('chat', () => {
       console.error('[ChatStore] 总结请求失败:', error)
       return '总结请求失败，请稍后重试。'
     }
+  }
+
+  /** 请求 AI 输出手写书面解题过程（以对话消息形式返回） */
+  async function requestMathSolution(): Promise<void> {
+    if (!activeChat.value) {
+      console.warn('[ChatStore] 无活跃对话，跳过数学解题请求')
+      return
+    }
+
+    const prompt = `请针对以上数学问题，给出完整的「手写书面风格」解题过程。
+
+要求：
+1. 使用规范的数学语言与符号
+2. 所有公式必须使用 LaTeX 语法（行内公式用 $...$，独立公式用 $$...$$）
+3. 步骤分层清晰，按「解」「已知」「推导」「代入」「化简」「验证」「答」等环节组织
+4. 最终结果用 \\boxed{结果} 标出
+5. 适当补充文字说明，模拟手写答题纸的排版节奏`
+
+    // 复用 sendMessage 通道，用户看到的是一个"系统请求"作为新消息发出
+    await sendMessage(prompt)
   }
 
   /** 发送函数表达式到 GeoGebra */
@@ -212,6 +232,7 @@ export const useChatStore = defineStore('chat', () => {
     switchChat,
     sendMessage,
     requestSummary,
+    requestMathSolution,
     sendToGeoGebra,
     deleteChat,
     exportChats,
