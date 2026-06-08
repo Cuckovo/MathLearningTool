@@ -123,10 +123,11 @@
   --button-danger-bg: var(--color-danger);
   --button-danger-text: var(--dayq-text-btn-white);
 }
-
+/* #ifndef MP-WEIXIN */
 * {
   box-sizing: border-box;
 }
+/* #endif */
 
 html,
 body {
