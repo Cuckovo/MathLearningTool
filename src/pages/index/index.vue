@@ -131,10 +131,10 @@ watch(activeView, (newView, oldView) => {
   console.log(`${LOG_PREFIX} 视图切换：${oldView} → ${newView}`)
 
   if (newView === 'geo') {
-    // 切换到 GeoGebra：重置 webview 状态，确保能正确接收绘图命令
+    // 切换到 GeoGebra：v-show 模式下 iframe 未卸载，直接尝试绘图
     nextTick(() => {
       if (geoWebviewRef.value) {
-        console.log(`${LOG_PREFIX} 重置 GeoGebraWebview 就绪状态`)
+        console.log(`${LOG_PREFIX} 触发 GeoGebraWebview 重绘检查`)
         geoWebviewRef.value.resetState()
       }
     })

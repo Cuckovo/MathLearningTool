@@ -39,8 +39,8 @@ const geogebraStore = useGeogebraStore()
  * iframeLoaded: iframe 的 load 事件已触发（DOM 已挂载）
  * ggbReady: GeoGebra Applet 内部初始化完成，可响应 evalCommand
  *
- * 关键：Tab 切换后 iframe 会重新加载，两个状态都需要重置
- * 由 geo_tool/index.vue 的 onShow 调用 resetState() 完成重置
+ * 关键：v-show 模式下 iframe 不会卸载/重新加载，GeoGebra 只发一次 ggbReady。
+ * resetState() 会检查 iframe 是否仍在 DOM 中，如果在则直接发送表达式。
  */
 const iframeLoaded = ref<boolean>(false)
 const ggbReady = ref<boolean>(false)
@@ -65,14 +65,33 @@ const geogebraUrlWithExpr = computed<string>(() => {
 })
 
 /**
- * 重置就绪状态（由父页面在 onShow 时调用）
- * Tab 切走后 iframe 会重新渲染，必须清除旧的就绪标记
- * 否则 watch 会误判 ggbReady=true 并提前 sendPlotCommand
+ * 重置就绪状态（由父页面在切换视图时调用）
+ *
+ * v-show 模式：iframe 一直在 DOM 中，GeoGebra 已在后台初始化完成。
+ * 此时不应重置 ggbReady（GeoGebra 不会再发第二次 ggbReady），
+ * 而是直接检查 iframe 是否可通信并尝试绘图。
  */
 function resetState(): void {
-  console.log(`${LOG_PREFIX} resetState 调用：重置 iframeLoaded/ggbReady`)
-  iframeLoaded.value = false
-  ggbReady.value = false
+  console.log(`${LOG_PREFIX} resetState 调用`)
+
+  // v-show 模式：iframe 始终在 DOM 中，contentWindow 应可用
+  if (iframeRef.value?.contentWindow) {
+    console.log(`${LOG_PREFIX} iframe 仍在 DOM 中（v-show 模式），直接通信`)
+    // 不重置 ggbReady — GeoGebra 已初始化，不会重新发送 ggbReady
+    // 直接尝试绘制 store 中的当前表达式
+    const exprToPlot = geogebraStore.currentExpression
+    if (exprToPlot) {
+      console.log(`${LOG_PREFIX} 发送当前表达式：`, exprToPlot)
+      setTimeout(() => sendPlotCommand(exprToPlot), 500)
+    } else {
+      console.log(`${LOG_PREFIX} 当前无表达式，跳过绘图`)
+    }
+  } else {
+    // iframe 真的不在 DOM 中（非 v-show 场景），才重置状态
+    console.log(`${LOG_PREFIX} iframe 不在 DOM 中，重置就绪状态`)
+    iframeLoaded.value = false
+    ggbReady.value = false
+  }
 }
 
 /** 监听来自 GeoGebra iframe 的消息 */
