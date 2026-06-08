@@ -26,8 +26,10 @@ const renderedContent = computed<string>(() => {
 </script>
 
 <style scoped>
-/* 导入 KaTeX CSS */
+/* #ifdef H5 */
+/* KaTeX CSS 仅 H5 端需要（小程序用 mp-html 渲染，无需 KaTeX CSS） */
 @import 'katex/dist/katex.min.css';
+/* #endif */
 
 .latex-renderer {
   width: 100%;
