@@ -145,12 +145,12 @@ watch(activeView, (newView, oldView) => {
 
 /** 滚动到底部 */
 function scrollToBottom(): void {
-  nextTick(() => {
-    if (chatStore.activeChat && chatStore.activeChat.messages.length > 0) {
-      scrollIntoView.value = `msg-${chatStore.activeChat.messages.length - 1}`
-    }
-    scrollTop.value = scrollTop.value + 1
-  })
+  // 延时确保 AI 回复渲染 + loading spinner 移除后 DOM 稳定，再滚到底
+  setTimeout(() => {
+    // 设置极大值强制 scroll-view 滚到底部（标准 uni-app 惯用法）
+    scrollTop.value = 999999
+    scrollIntoView.value = ''
+  }, 100)
 }
 
 // 监听消息变化自动滚动
