@@ -86,6 +86,8 @@ function handleSendToGeoGebra(): void {
   justify-content: center;
   gap: var(--space-2);
   padding: 6px var(--space-3);
+  margin-left: 0 !important;
+  margin-right: 0 !important;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   font-weight: 600;
