@@ -3,13 +3,16 @@
     {
       "path": "pages/ai_chat/index",
       "style": {
-        "navigationBarTitleText": "AI对话"
+        "navigationBarTitleText": "AI对话",
+		"navigationStyle": "custom"
+        
       }
     },
     {
       "path": "pages/geo_tool/index",
       "style": {
-        "navigationBarTitleText": "Geo工具"
+        "navigationBarTitleText": "Geo工具",
+        "navigationStyle": "custom"
       }
     },
     {
@@ -22,6 +25,7 @@
   "tabBar": {
     "color": "#999999",
     "selectedColor": "#90c208",
+    "height": "0px",
     "list": [
       {
         "pagePath": "pages/geo_tool/index",
