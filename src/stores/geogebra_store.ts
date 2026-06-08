@@ -27,8 +27,8 @@ export const useGeogebraStore = defineStore('geogebra', () => {
     console.log(`${LOG_PREFIX} 表达式已更新：`, { 旧值: oldExpr, 新值: expr })
   }
 
-  /** 当前显示的视图：'chat' = AI对话页，'geo' = GeoGebra页 */
-  const activeView = ref<'chat' | 'geo'>('chat')
+  /** 当前显示的视图：'chat' = AI对话页，'geo' = GeoGebra页（默认进入GeoGebra） */
+  const activeView = ref<'chat' | 'geo'>('geo')
 
   /** 切换视图（不卸载页面，v-show 控制显隐） */
   function switchView(view: 'chat' | 'geo'): void {
