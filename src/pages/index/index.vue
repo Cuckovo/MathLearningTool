@@ -125,11 +125,11 @@ const geoWebviewRef = ref<InstanceType<typeof GeogebraWebview> | null>(null)
 
 // ── 页面滑动动画 ──
 const chatViewStyle = computed(() => ({
-  transform: activeView.value === 'chat' ? 'translateX(0)' : 'translateX(-100%)',
+  transform: activeView.value === 'chat' ? 'translateX(0)' : 'translateX(100%)',
 }))
 
 const geoViewStyle = computed(() => ({
-  transform: activeView.value === 'geo' ? 'translateX(0)' : 'translateX(100%)',
+  transform: activeView.value === 'geo' ? 'translateX(0)' : 'translateX(-100%)',
 }))
 
 // ── 初始化 ──
@@ -162,12 +162,19 @@ watch(activeView, (newView, oldView) => {
 
 /** 滚动到底部 */
 function scrollToBottom(): void {
-  // 延时确保 AI 回复渲染 + loading spinner 移除后 DOM 稳定，再滚到底
+  // 延时确保 DOM 渲染后滚动才生效
   setTimeout(() => {
-    // 设置极大值强制 scroll-view 滚到底部（标准 uni-app 惯用法）
     scrollTop.value = 999999
     scrollIntoView.value = ''
   }, 100)
+}
+
+/** 快速滚动到底部（用于逐字输出等高频率场景，nextTick 保证 DOM 同步） */
+function scrollToBottomFast(): void {
+  nextTick(() => {
+    scrollTop.value = 999999
+    scrollIntoView.value = ''
+  })
 }
 
 // 监听消息变化自动滚动
@@ -176,9 +183,9 @@ watch(
   () => { scrollToBottom() },
 )
 
-// 监听逐字输出 tick（每写入一个字符滚到底部）
+// 监听逐字输出 tick（每写入一个字符快速滚到底部）
 watch(typingTick, () => {
-  scrollToBottom()
+  scrollToBottomFast()
 })
 
 /** 发送消息 */

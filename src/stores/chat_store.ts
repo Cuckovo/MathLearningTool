@@ -166,18 +166,13 @@ export const useChatStore = defineStore('chat', () => {
       aiMessage.hasFunction = parsed.canPlot
       aiMessage.functionExpr = parsed.functionExpr
 
+      // 先推送空消息到数组，使 Vue 创建 DOM 占位
       chat.messages.push(aiMessage)
-
-      // 先保存空内容版本（用于本地恢复时不丢消息）
-      chat.updatedAt = Date.now()
-      StorageService.saveChat(chat)
-      loadChats()
-      activeChat.value = { ...chat }
 
       // 先关闭 loading spinner，让逐字输出接管视觉反馈
       isLoading.value = false
 
-      // 启动逐字输出
+      // 启动逐字输出（直接修改 aiMessage.content，此时 activeChat 仍指向同一对象）
       await startTypingEffect(aiMessage, fullContent)
 
       // 逐字输出完成后：提取 LaTeX + 保存最终版本
@@ -266,13 +261,8 @@ export const useChatStore = defineStore('chat', () => {
       aiMessage.hasFunction = parsed.canPlot
       aiMessage.functionExpr = parsed.functionExpr
 
-      // 仅将 AI 回复写入对话
+      // 仅将 AI 回复写入对话（先推送空消息占位）
       chat.messages.push(aiMessage)
-      chat.updatedAt = Date.now()
-
-      StorageService.saveChat(chat)
-      loadChats()
-      activeChat.value = { ...chat }
 
       // 先关闭 loading，让逐字输出接管
       isLoading.value = false
@@ -280,7 +270,7 @@ export const useChatStore = defineStore('chat', () => {
       // 启动逐字输出
       await startTypingEffect(aiMessage, fullContent)
 
-      // 完成后提取 LaTeX
+      // 完成后提取 LaTeX + 保存
       const latexList = LatexParser.extractLatex(fullContent)
       aiMessage.latex = latexList
       chat.updatedAt = Date.now()
