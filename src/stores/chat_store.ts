@@ -110,8 +110,12 @@ export const useChatStore = defineStore('chat', () => {
         messages: chat.messages,
       })
 
-      // 解析 AI 响应
+      // 解析 AI 响应（提取结构化字段）
       const parsed = AiResponseParser.parse(aiMessage.content)
+
+      // 前端展示内容：只显示解题过程，去掉【图像判断】/【函数表达式】两段
+      aiMessage.content = parsed.solvingProcess || aiMessage.content
+
       const latexList = LatexParser.extractLatex(aiMessage.content)
 
       // 完善 AI 消息
@@ -197,8 +201,12 @@ export const useChatStore = defineStore('chat', () => {
         messages: apiMessages,
       })
 
-      // 解析 AI 响应
+      // 解析 AI 响应（提取结构化字段）
       const parsed = AiResponseParser.parse(aiMessage.content)
+
+      // 前端展示内容：只显示解题过程，去掉【图像判断】/【函数表达式】两段
+      aiMessage.content = parsed.solvingProcess || aiMessage.content
+
       const latexList = LatexParser.extractLatex(aiMessage.content)
       aiMessage.latex = latexList
       aiMessage.hasFunction = parsed.canPlot
