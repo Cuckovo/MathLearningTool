@@ -58,7 +58,7 @@ function formatTime(timestamp: number): string {
 .message-wrapper {
   display: flex;
   flex-direction: column;
-  max-width: 85%;
+  width: 100%;
 }
 
 .message-wrapper--user {
