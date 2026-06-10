@@ -20,6 +20,53 @@ export const useChatStore = defineStore('chat', () => {
   const activeChat = ref<ChatSession | null>(null)
   /** 是否正在发送 */
   const isLoading = ref<boolean>(false)
+  /** 是否正在逐字输出 */
+  const isTyping = ref<boolean>(false)
+  /** 逐字输出 tick（每写入一个字符 +1），页面监听此值触发滚动 */
+  const typingTick = ref<number>(0)
+
+  /** 当前逐字输出定时器（用于取消） */
+  let typingTimer: ReturnType<typeof setInterval> | null = null
+
+  /** 取消逐字输出（立刻显示完整文本） */
+  function cancelTyping(): void {
+    if (typingTimer !== null) {
+      clearInterval(typingTimer)
+      typingTimer = null
+    }
+    isTyping.value = false
+  }
+
+  /**
+   * 启动逐字输出效果
+   * @param message 要写入内容的消息对象
+   * @param fullText 完整文本
+   * @returns Promise，在逐字输出完成后 resolve
+   */
+  function startTypingEffect(message: ChatMessage, fullText: string): Promise<void> {
+    return new Promise((resolve) => {
+      // 取消可能仍在运行的旧定时器
+      cancelTyping()
+
+      message.content = ''
+      let index = 0
+      const speed = 25 // 毫秒/字符
+      isTyping.value = true
+
+      typingTimer = setInterval(() => {
+        index++
+        message.content = fullText.substring(0, index)
+        typingTick.value++
+
+        if (index >= fullText.length) {
+          clearInterval(typingTimer!)
+          typingTimer = null
+          isTyping.value = false
+          resolve()
+        }
+      }, speed)
+    })
+  }
 
   /** 当前聊天是否可绘制函数 */
   const canPlot = computed<boolean>(() => {
@@ -112,26 +159,37 @@ export const useChatStore = defineStore('chat', () => {
 
       // 解析 AI 响应（提取结构化字段）
       const parsed = AiResponseParser.parse(aiMessage.content)
+      const fullContent = parsed.solvingProcess || aiMessage.content
 
-      // 前端展示内容：只显示解题过程，去掉【图像判断】/【函数表达式】两段
-      aiMessage.content = parsed.solvingProcess || aiMessage.content
-
-      const latexList = LatexParser.extractLatex(aiMessage.content)
-
-      // 完善 AI 消息
-      aiMessage.latex = latexList
+      // 完善 AI 消息元数据（content 先置空，由逐字输出填充）
+      aiMessage.content = ''
       aiMessage.hasFunction = parsed.canPlot
       aiMessage.functionExpr = parsed.functionExpr
 
       chat.messages.push(aiMessage)
-      chat.updatedAt = Date.now()
 
-      // 保存
+      // 先保存空内容版本（用于本地恢复时不丢消息）
+      chat.updatedAt = Date.now()
+      StorageService.saveChat(chat)
+      loadChats()
+      activeChat.value = { ...chat }
+
+      // 先关闭 loading spinner，让逐字输出接管视觉反馈
+      isLoading.value = false
+
+      // 启动逐字输出
+      await startTypingEffect(aiMessage, fullContent)
+
+      // 逐字输出完成后：提取 LaTeX + 保存最终版本
+      const latexList = LatexParser.extractLatex(fullContent)
+      aiMessage.latex = latexList
+      chat.updatedAt = Date.now()
       StorageService.saveChat(chat)
       loadChats()
       activeChat.value = { ...chat }
     } catch (error) {
       console.error('[ChatStore] 发送消息失败:', error)
+      isLoading.value = false
       // 添加错误提示消息
       const errorMsg: ChatMessage = {
         role: 'assistant',
@@ -143,8 +201,6 @@ export const useChatStore = defineStore('chat', () => {
       StorageService.saveChat(chat)
       loadChats()
       activeChat.value = { ...chat }
-    } finally {
-      isLoading.value = false
     }
   }
 
@@ -203,12 +259,10 @@ export const useChatStore = defineStore('chat', () => {
 
       // 解析 AI 响应（提取结构化字段）
       const parsed = AiResponseParser.parse(aiMessage.content)
+      const fullContent = parsed.solvingProcess || aiMessage.content
 
-      // 前端展示内容：只显示解题过程，去掉【图像判断】/【函数表达式】两段
-      aiMessage.content = parsed.solvingProcess || aiMessage.content
-
-      const latexList = LatexParser.extractLatex(aiMessage.content)
-      aiMessage.latex = latexList
+      // 完善 AI 消息元数据（content 先置空，由逐字输出填充）
+      aiMessage.content = ''
       aiMessage.hasFunction = parsed.canPlot
       aiMessage.functionExpr = parsed.functionExpr
 
@@ -219,8 +273,23 @@ export const useChatStore = defineStore('chat', () => {
       StorageService.saveChat(chat)
       loadChats()
       activeChat.value = { ...chat }
+
+      // 先关闭 loading，让逐字输出接管
+      isLoading.value = false
+
+      // 启动逐字输出
+      await startTypingEffect(aiMessage, fullContent)
+
+      // 完成后提取 LaTeX
+      const latexList = LatexParser.extractLatex(fullContent)
+      aiMessage.latex = latexList
+      chat.updatedAt = Date.now()
+      StorageService.saveChat(chat)
+      loadChats()
+      activeChat.value = { ...chat }
     } catch (error) {
       console.error('[ChatStore] 数学解题请求失败:', error)
+      isLoading.value = false
       const errorMsg: ChatMessage = {
         role: 'assistant',
         content: `解题请求失败，请稍后重试。\n错误：${error instanceof Error ? error.message : String(error)}`,
@@ -231,8 +300,6 @@ export const useChatStore = defineStore('chat', () => {
       StorageService.saveChat(chat)
       loadChats()
       activeChat.value = { ...chat }
-    } finally {
-      isLoading.value = false
     }
   }
 
@@ -280,6 +347,8 @@ export const useChatStore = defineStore('chat', () => {
     chatList,
     activeChat,
     isLoading,
+    isTyping,
+    typingTick,
     canPlot,
     canSummarize,
     loadChats,
@@ -291,5 +360,6 @@ export const useChatStore = defineStore('chat', () => {
     sendToGeoGebra,
     deleteChat,
     exportChats,
+    cancelTyping,
   }
 })

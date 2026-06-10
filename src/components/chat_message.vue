@@ -59,6 +59,18 @@ function formatTime(timestamp: number): string {
   display: flex;
   flex-direction: column;
   width: 100%;
+  animation: messageSlideIn 0.35s ease-out;
+}
+
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .message-wrapper--user {

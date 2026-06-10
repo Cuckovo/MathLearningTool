@@ -21,67 +21,68 @@
       <view class="navbar-right"></view>
     </view>
 
-    <!-- ===== 对话视图 ===== -->
-    <view class="chat-view" :class="{ hidden: activeView !== 'chat' }">
-      <scroll-view
-        class="chat-messages"
-        scroll-y
-        :scroll-top="scrollTop"
-        :scroll-into-view="scrollIntoView"
-        :scroll-with-animation="true"
-      >
-        <view v-if="!activeChat || activeChat.messages.length === 0" class="empty-state">
-          <text class="empty-state__icon">📐</text>
-          <text>输入高等数学问题，AI 将为你解题</text>
-        </view>
-
-        <view v-else class="messages-container">
-          <view
-            v-for="(msg, index) in activeChat.messages"
-            :key="index"
-            :id="`msg-${index}`"
-          >
-            <chat-message :message="msg" />
+    <!-- 视图滑动容器（用于左右切换动画） -->
+    <view class="view-slide-container">
+      <!-- ===== 对话视图 ===== -->
+      <view class="chat-view" :style="chatViewStyle">
+        <scroll-view
+          class="chat-messages"
+          scroll-y
+          :scroll-top="scrollTop"
+          :scroll-into-view="scrollIntoView"
+          :scroll-with-animation="true"
+        >
+          <view v-if="!activeChat || activeChat.messages.length === 0" class="empty-state">
+            <text class="empty-state__icon">📐</text>
+            <text>输入高等数学问题，AI 将为你解题</text>
           </view>
 
-          <view v-if="isLoading" class="loading-indicator">
-            <view class="loading-spinner"></view>
-            <text class="loading-text">AI 正在思考...</text>
+          <view v-else class="messages-container">
+            <view
+              v-for="(msg, index) in activeChat.messages"
+              :key="index"
+              :id="`msg-${index}`"
+            >
+              <chat-message :message="msg" />
+            </view>
+
+            <view v-if="isLoading" class="loading-indicator">
+              <view class="loading-spinner"></view>
+              <text class="loading-text">AI 正在思考...</text>
+            </view>
           </view>
+        </scroll-view>
+
+        <!-- 功能按钮区 + 底部输入区 -->
+        <view class="chat-bottom-area">
+          <action-buttons
+            :can-summarize="canSummarize"
+            :can-plot="canPlot"
+            @summary="handleSummary"
+            @send-to-geo-gebra="handleSendToGeoGebra"
+          />
+
+          <chat-input
+            :disabled="isLoading"
+            @send="handleSend"
+          />
         </view>
-      </scroll-view>
 
-      <!-- 功能按钮区 + 底部输入区 -->
-      <view class="chat-bottom-area">
-        <action-buttons
-          :can-summarize="canSummarize"
-          :can-plot="canPlot"
-          @summary="handleSummary"
-          @send-to-geo-gebra="handleSendToGeoGebra"
-        />
-
-        <chat-input
-          :disabled="isLoading"
-          @send="handleSend"
+        <!-- 历史记录抽屉 -->
+        <history-drawer
+          :visible="showHistory"
+          @close="showHistory = false"
+          @select="handleSelectChat"
+          @delete="handleDeleteChat"
+          @export="handleExport"
         />
       </view>
 
-      <!-- 历史记录抽屉 -->
-      <history-drawer
-        :visible="showHistory"
-        @close="showHistory = false"
-        @select="handleSelectChat"
-        @delete="handleDeleteChat"
-        @export="handleExport"
-      />
-
-      <!-- 总结面板（已弃用，保留以供后续使用） -->
-    </view>
-
-    <!-- ===== GeoGebra 视图 ===== -->
-    <view class="geo-view" :class="{ hidden: activeView !== 'geo' }">
-      <view class="geogebra-container">
-        <geogebra-webview ref="geoWebviewRef" :expression="pendingExpression" />
+      <!-- ===== GeoGebra 视图 ===== -->
+      <view class="geo-view" :style="geoViewStyle">
+        <view class="geogebra-container">
+          <geogebra-webview ref="geoWebviewRef" :expression="pendingExpression" />
+        </view>
       </view>
     </view>
   </view>
@@ -114,11 +115,22 @@ const scrollIntoView = ref<string>('')
 
 const activeChat = computed(() => chatStore.activeChat)
 const isLoading = computed(() => chatStore.isLoading)
+const isTyping = computed(() => chatStore.isTyping)
+const typingTick = computed(() => chatStore.typingTick)
 const canPlot = computed(() => chatStore.canPlot)
 const canSummarize = computed(() => chatStore.canSummarize)
 
 // ── GeoGebra 相关 ──
 const geoWebviewRef = ref<InstanceType<typeof GeogebraWebview> | null>(null)
+
+// ── 页面滑动动画 ──
+const chatViewStyle = computed(() => ({
+  transform: activeView.value === 'chat' ? 'translateX(0)' : 'translateX(-100%)',
+}))
+
+const geoViewStyle = computed(() => ({
+  transform: activeView.value === 'geo' ? 'translateX(0)' : 'translateX(100%)',
+}))
 
 // ── 初始化 ──
 chatStore.loadChats()
@@ -139,6 +151,11 @@ watch(activeView, (newView, oldView) => {
       }
     })
   }
+
+  if (newView === 'chat') {
+    // 切换到对话：滚动到最底端
+    nextTick(() => scrollToBottom())
+  }
 })
 
 // ── 对话操作方法 ──
@@ -158,6 +175,11 @@ watch(
   () => chatStore.activeChat?.messages?.length,
   () => { scrollToBottom() },
 )
+
+// 监听逐字输出 tick（每写入一个字符滚到底部）
+watch(typingTick, () => {
+  scrollToBottom()
+})
 
 /** 发送消息 */
 async function handleSend(content: string): Promise<void> {
@@ -227,6 +249,14 @@ function handleExport(): void {
   overflow: hidden;
 }
 
+/* ── 视图滑动容器 ── */
+.view-slide-container {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
 /* ── 导航栏 ── */
 .unified-navbar {
   display: flex;
@@ -258,11 +288,14 @@ function handleExport(): void {
 
 /* ── 对话视图 ── */
 .chat-view {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  transition: transform 200ms ease;
 }
 
 .chat-messages {
@@ -299,11 +332,14 @@ function handleExport(): void {
 
 /* ── GeoGebra 视图 ── */
 .geo-view {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  transition: transform 200ms ease;
 }
 
 .geogebra-container {
