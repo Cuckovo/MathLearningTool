@@ -168,16 +168,18 @@ export const useChatStore = defineStore('chat', () => {
 
       // 先推送空消息到数组，使 Vue 创建 DOM 占位
       chat.messages.push(aiMessage)
+      // ⭐ 关键：push 后从数组取 Proxy 引用，不能用原始 aiMessage（否则 Vue 响应式脱钩）
+      const aiMessageInArray = chat.messages[chat.messages.length - 1]
 
       // 先关闭 loading spinner，让逐字输出接管视觉反馈
       isLoading.value = false
 
-      // 启动逐字输出（直接修改 aiMessage.content，此时 activeChat 仍指向同一对象）
-      await startTypingEffect(aiMessage, fullContent)
+      // 启动逐字输出（用数组中的 Proxy 引用，确保 Vue 能检测 content 变化）
+      await startTypingEffect(aiMessageInArray, fullContent)
 
       // 逐字输出完成后：提取 LaTeX + 保存最终版本
       const latexList = LatexParser.extractLatex(fullContent)
-      aiMessage.latex = latexList
+      aiMessageInArray.latex = latexList
       chat.updatedAt = Date.now()
       StorageService.saveChat(chat)
       loadChats()
@@ -263,16 +265,18 @@ export const useChatStore = defineStore('chat', () => {
 
       // 仅将 AI 回复写入对话（先推送空消息占位）
       chat.messages.push(aiMessage)
+      // ⭐ 关键：push 后从数组取 Proxy 引用
+      const aiMessageInArray = chat.messages[chat.messages.length - 1]
 
       // 先关闭 loading，让逐字输出接管
       isLoading.value = false
 
-      // 启动逐字输出
-      await startTypingEffect(aiMessage, fullContent)
+      // 启动逐字输出（用 Proxy 引用）
+      await startTypingEffect(aiMessageInArray, fullContent)
 
       // 完成后提取 LaTeX + 保存
       const latexList = LatexParser.extractLatex(fullContent)
-      aiMessage.latex = latexList
+      aiMessageInArray.latex = latexList
       chat.updatedAt = Date.now()
       StorageService.saveChat(chat)
       loadChats()
