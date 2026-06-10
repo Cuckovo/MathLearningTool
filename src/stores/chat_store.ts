@@ -50,7 +50,7 @@ export const useChatStore = defineStore('chat', () => {
 
       message.content = ''
       let index = 0
-      const speed = 25 // 毫秒/字符
+      const speed = 12 // 毫秒/字符（约 83 字/秒）
       isTyping.value = true
 
       typingTimer = setInterval(() => {
